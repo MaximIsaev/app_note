@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.notesapp.markdownnotes.data.repository.NoteRepository
 import com.notesapp.markdownnotes.domain.model.Note
+import com.notesapp.markdownnotes.ui.screen.editor.NoteEditorScreen
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -30,6 +31,7 @@ fun NotesListScreen() {
     var notes by remember { mutableStateOf<List<Note>>(emptyList()) }
     var showNewNoteDialog by remember { mutableStateOf(false) }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
+    var isEditing by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         notes = repository.getAllNotes()
@@ -37,6 +39,25 @@ fun NotesListScreen() {
     
     fun refreshNotes() {
         notes = repository.getAllNotes()
+    }
+    
+    if (isEditing && selectedNote != null) {
+        NoteEditorScreen(
+            initialTitle = selectedNote!!.title,
+            initialContent = selectedNote!!.content,
+            onNavigateBack = { newTitle, newContent ->
+                val updatedNote = selectedNote!!.copy(
+                    title = newTitle.ifBlank { "Заметка" },
+                    content = newContent,
+                    lastModified = System.currentTimeMillis()
+                )
+                repository.saveNote(updatedNote)
+                refreshNotes()
+                selectedNote = null
+                isEditing = false
+            }
+        )
+        return
     }
     
     Scaffold(
@@ -82,7 +103,10 @@ fun NotesListScreen() {
                 items(notes, key = { it.id }) { note ->
                     NoteItem(
                         note = note,
-                        onClick = { selectedNote = note },
+                        onClick = { 
+                            selectedNote = note
+                            isEditing = true
+                        },
                         onDelete = {
                             repository.deleteNote(note.id)
                             refreshNotes()
@@ -100,18 +124,6 @@ fun NotesListScreen() {
                 repository.createNote(title, content)
                 refreshNotes()
                 showNewNoteDialog = false
-            }
-        )
-    }
-    
-    if (selectedNote != null) {
-        EditNoteDialog(
-            note = selectedNote!!,
-            onDismiss = { selectedNote = null },
-            onSave = { updatedNote ->
-                repository.saveNote(updatedNote)
-                refreshNotes()
-                selectedNote = null
             }
         )
     }
@@ -203,61 +215,6 @@ fun NewNoteDialog(
                 }
             ) {
                 Text("Создать")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Отмена")
-            }
-        }
-    )
-}
-
-@Composable
-fun EditNoteDialog(
-    note: Note,
-    onDismiss: () -> Unit,
-    onSave: (Note) -> Unit
-) {
-    var title by remember { mutableStateOf(note.title) }
-    var content by remember { mutableStateOf(note.content) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Редактировать заметку") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Заголовок") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("Содержимое (Markdown)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    maxLines = 10
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val updatedNote = note.copy(
-                        title = title.ifBlank { "Заметка" },
-                        content = content,
-                        lastModified = System.currentTimeMillis()
-                    )
-                    onSave(updatedNote)
-                }
-            ) {
-                Text("Сохранить")
             }
         },
         dismissButton = {
