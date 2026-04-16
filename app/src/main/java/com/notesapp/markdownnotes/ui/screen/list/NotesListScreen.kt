@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ExperimentalMaterial3Api
 import com.notesapp.markdownnotes.data.repository.NoteRepository
 import com.notesapp.markdownnotes.domain.model.Note
 import java.text.SimpleDateFormat
