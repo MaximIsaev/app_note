@@ -1,0 +1,70 @@
+```
+# Android
+*.apk
+*.aar
+*.dex
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.hprof
+*.pyc
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log Files
+*.log
+
+# Built application files
+*.apk
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Debug symbol files
+.map[linenum]
+
+# Proguard generated files
+proguard/
+
+# Android cache files
+.cache/
+
+# Coverage reports
+coverage/
+*.ec
+
+# Project backup files
+Backup*
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```
