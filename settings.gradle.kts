@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MarkdownNotes"
-include ':app'
+include(":app")
