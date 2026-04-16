@@ -32,6 +32,7 @@ fun NotesListScreen() {
     var showNewNoteDialog by remember { mutableStateOf(false) }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
     var isEditing by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf<Note?>(null) }
     
     LaunchedEffect(Unit) {
         notes = repository.getAllNotes()
@@ -108,8 +109,7 @@ fun NotesListScreen() {
                             isEditing = true
                         },
                         onDelete = {
-                            repository.deleteNote(note.id)
-                            refreshNotes()
+                            showDeleteDialog = note
                         }
                     )
                 }
@@ -124,6 +124,17 @@ fun NotesListScreen() {
                 repository.createNote(title, content)
                 refreshNotes()
                 showNewNoteDialog = false
+            }
+        )
+    }
+    
+    showDeleteDialog?.let { noteToDelete ->
+        DeleteConfirmationDialog(
+            onDismiss = { showDeleteDialog = null },
+            onConfirm = {
+                repository.deleteNote(noteToDelete.id)
+                refreshNotes()
+                showDeleteDialog = null
             }
         )
     }
@@ -220,6 +231,32 @@ fun NewNoteDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Отмена")
+            }
+        }
+    )
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Подтверждение удаления") },
+        text = { Text("Вы действительно хотите удалить заметку?") },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm()
+                }
+            ) {
+                Text("ДА")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("НЕТ")
             }
         }
     )
