@@ -90,76 +90,112 @@ fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<Stri
 // Функция для создания визуальной трансформации, скрывающей символы форматирования
 fun createMarkdownVisualTransformation(): VisualTransformation {
     return VisualTransformation { text ->
-        val transformedText = transformMarkdownText(text.text)
+        val transformedResult = transformMarkdownText(text.text)
+        val transformedString = transformedResult.first
+        val originalLines = transformedResult.second
+        
         TransformedText(
-            text = buildAnnotatedStringWithStyles(transformedText.first, transformedText.second),
+            text = buildAnnotatedStringWithStyles(transformedString, originalLines),
             offsetMapping = object : OffsetMapping {
                 override fun originalToTransformed(offset: Int): Int {
-                    // Простая логика: считаем количество скрытых символов до позиции
-                    var hiddenCount = 0
-                    var currentPos = 0
-                    val lines = text.text.split("\n")
-                    var charCount = 0
+                    if (offset == 0) return 0
                     
-                    for (line in lines) {
-                        val lineLength = line.length
-                        if (charCount + lineLength >= offset) {
-                            // Мы в нужной строке
-                            when {
-                                line.startsWith("### ") -> hiddenCount += 4
-                                line.startsWith("## ") -> hiddenCount += 3
-                                line.startsWith("# ") -> hiddenCount += 2
-                            }
-                            break
-                        }
-                        charCount += lineLength + 1 // +1 для символа новой строки
+                    val originalText = text.text
+                    var originalIndex = 0
+                    var transformedIndex = 0
+                    
+                    while (originalIndex < offset && originalIndex < originalText.length) {
+                        // Проверяем начало строки
+                        val isStartOfLine = (originalIndex == 0 || originalText[originalIndex - 1] == '\n')
                         
-                        // Проверяем скрытые символы в пройденных строках
-                        when {
-                            line.startsWith("### ") -> hiddenCount += 4
-                            line.startsWith("## ") -> hiddenCount += 3
-                            line.startsWith("# ") -> hiddenCount += 2
+                        if (isStartOfLine) {
+                            val remaining = originalText.substring(originalIndex)
+                            when {
+                                remaining.startsWith("### ") -> {
+                                    if (originalIndex + 4 <= offset) {
+                                        originalIndex += 4
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        // Курсор внутри скрытой части
+                                        return transformedIndex
+                                    }
+                                }
+                                remaining.startsWith("## ") -> {
+                                    if (originalIndex + 3 <= offset) {
+                                        originalIndex += 3
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        return transformedIndex
+                                    }
+                                }
+                                remaining.startsWith("# ") -> {
+                                    if (originalIndex + 2 <= offset) {
+                                        originalIndex += 2
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        return transformedIndex
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (originalText[originalIndex] == '\n') {
+                            transformedIndex++
+                            originalIndex++
+                        } else {
+                            transformedIndex++
+                            originalIndex++
                         }
                     }
                     
-                    return offset - hiddenCount
+                    return transformedIndex
                 }
 
                 override fun transformedToOriginal(offset: Int): Int {
-                    // Обратное преобразование: добавляем количество скрытых символов
-                    var addedCount = 0
-                    var currentPos = 0
-                    val lines = text.text.split("\n")
-                    var charCount = 0
+                    if (offset == 0) return 0
                     
-                    for (line in lines) {
-                        val displayLineLength = when {
-                            line.startsWith("### ") -> line.length - 4
-                            line.startsWith("## ") -> line.length - 3
-                            line.startsWith("# ") -> line.length - 2
-                            else -> line.length
-                        }
+                    val originalText = text.text
+                    var originalIndex = 0
+                    var transformedIndex = 0
+                    
+                    while (transformedIndex < offset && originalIndex < originalText.length) {
+                        // Проверяем начало строки
+                        val isStartOfLine = (originalIndex == 0 || originalText[originalIndex - 1] == '\n')
                         
-                        if (charCount + displayLineLength >= offset) {
-                            // Мы в нужной строке
+                        if (isStartOfLine) {
+                            val remaining = originalText.substring(originalIndex)
                             when {
-                                line.startsWith("### ") -> addedCount += 4
-                                line.startsWith("## ") -> addedCount += 3
-                                line.startsWith("# ") -> addedCount += 2
+                                remaining.startsWith("### ") -> {
+                                    originalIndex += 4
+                                    // transformedIndex не увеличивается
+                                    continue
+                                }
+                                remaining.startsWith("## ") -> {
+                                    originalIndex += 3
+                                    continue
+                                }
+                                remaining.startsWith("# ") -> {
+                                    originalIndex += 2
+                                    continue
+                                }
                             }
-                            break
                         }
-                        charCount += displayLineLength + 1 // +1 для символа новой строки
                         
-                        // Добавляем скрытые символы для пройденных строк
-                        when {
-                            line.startsWith("### ") -> addedCount += 4
-                            line.startsWith("## ") -> addedCount += 3
-                            line.startsWith("# ") -> addedCount += 2
+                        if (originalIndex < originalText.length) {
+                            if (originalText[originalIndex] == '\n') {
+                                transformedIndex++
+                                originalIndex++
+                            } else {
+                                transformedIndex++
+                                originalIndex++
+                            }
                         }
                     }
                     
-                    return offset + addedCount
+                    return originalIndex
                 }
             }
         )
