@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,9 @@ import com.notesapp.markdownnotes.ui.screen.editor.NoteEditorScreen
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +37,20 @@ fun NotesListScreen() {
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Note?>(null) }
     var isNewNote by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    
+    // Лаунчер для запроса разрешения на запись файлов
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            exportNotes(repository, context) { successMessage ->
+                Toast.makeText(context, successMessage, Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(context, "Разрешение на запись не предоставлено", Toast.LENGTH_SHORT).show()
+        }
+    }
     
     LaunchedEffect(Unit) {
         notes = repository.getAllNotes()
@@ -40,6 +58,17 @@ fun NotesListScreen() {
     
     fun refreshNotes() {
         notes = repository.getAllNotes()
+    }
+    
+    fun handleExportClick() {
+        // Для Android 10+ (API 29+) разрешение не требуется благодаря Scoped Storage
+        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.P) {
+            requestPermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            exportNotes(repository, context) { successMessage ->
+                Toast.makeText(context, successMessage, Toast.LENGTH_LONG).show()
+            }
+        }
     }
     
     if (isEditing && selectedNote != null) {
@@ -93,6 +122,15 @@ fun NotesListScreen() {
         topBar = {
             TopAppBar(
                 title = { Text("Заметки") },
+                actions = {
+                    IconButton(onClick = { handleExportClick() }) {
+                        Icon(
+                            Icons.Default.FileDownload,
+                            contentDescription = "Экспорт заметок",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -155,6 +193,26 @@ fun NotesListScreen() {
             }
         )
     }
+}
+
+private fun exportNotes(
+    repository: NoteRepository,
+    context: android.content.Context,
+    onSuccess: (String) -> Unit
+) {
+    val result = repository.exportAllNotesToZip(context)
+    result.fold(
+        onSuccess = { filePath ->
+            onSuccess("Заметки экспортированы в: $filePath")
+        },
+        onFailure = { error ->
+            val message = when {
+                error.message?.contains("Нет заметок") == true -> "Нет заметок для экспорта"
+                else -> "Ошибка экспорта: ${error.message}"
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    )
 }
 
 @Composable
