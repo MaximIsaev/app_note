@@ -48,8 +48,10 @@ fun NotesListScreen() {
             initialContent = selectedNote!!.content,
             isEditMode = true,
             onNavigateBack = { newTitle, newContent ->
+                // Получаем первую строку контента для использования в качестве заголовка
+                val firstLine = newContent.split("\n").firstOrNull()?.take(50) ?: ""
                 val updatedNote = selectedNote!!.copy(
-                    title = newTitle.ifBlank { "Заметка" },
+                    title = firstLine,
                     content = newContent,
                     lastModified = System.currentTimeMillis()
                 )
@@ -75,9 +77,10 @@ fun NotesListScreen() {
             isEditMode = false,
             onNavigateBack = { newTitle, newContent ->
                 // Если пользователь ничего не ввел, просто закрываем экран без создания заметки
-                if (newTitle.isNotBlank() || newContent.isNotBlank()) {
-                    val finalTitle = newTitle.ifBlank { "Заметка" }
-                    repository.createNote(finalTitle, newContent)
+                if (newContent.isNotBlank()) {
+                    // Получаем первую строку контента для использования в качестве заголовка
+                    val firstLine = newContent.split("\n").firstOrNull()?.take(50) ?: ""
+                    repository.createNote(firstLine, newContent)
                     refreshNotes()
                 }
                 isNewNote = false
@@ -177,7 +180,7 @@ fun NoteItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = note.title.ifBlank { "Без названия" },
+                    text = note.title.ifBlank { note.content.take(50).ifEmpty { "Без названия" } },
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

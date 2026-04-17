@@ -44,7 +44,7 @@ fun NoteEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditMode) "Редактирование" else "Новая заметка") },
+                title = { Text("") },
                 navigationIcon = {
                     IconButton(onClick = { onNavigateBack(title, content) }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
@@ -86,28 +86,6 @@ fun NoteEditorScreen(
                     .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Поле заголовка без рамок и линий
-                BasicTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = LocalTextStyle.current.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (title.isEmpty()) {
-                                Text(
-                                    text = "Название",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-                
                 // Поле контента без рамок и линий с поддержкой нумерованных списков
                 var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
                 
