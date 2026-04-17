@@ -101,7 +101,7 @@ fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<Stri
 fun applyInlineStyles(builder: AnnotatedString.Builder, text: String) {
     var index = 0
     while (index < text.length) {
-        // Проверяем на bold (**text**)
+        // Проверяем на bold (**text**) - должно быть раньше проверки italic
         if (index + 1 < text.length && text[index] == '*' && text[index + 1] == '*') {
             val startIndex = index + 2
             val endIndex = text.indexOf("**", startIndex)
@@ -115,14 +115,41 @@ fun applyInlineStyles(builder: AnnotatedString.Builder, text: String) {
             }
         }
         
-        // Проверяем на italic (*text*)
+        // Проверяем на italic (*text*) - только одиночные *
         if (text[index] == '*') {
-            val startIndex = index + 1
-            val endIndex = text.indexOf('*', startIndex)
-            if (endIndex != -1) {
-                // Проверяем, что это не часть **
-                if (!(startIndex > 0 && text[startIndex - 1] == '*') && 
-                    !(endIndex + 1 < text.length && text[endIndex + 1] == '*')) {
+            // Пропускаем, если это часть ** (открывающая или закрывающая)
+            val isBoldStart = (index + 1 < text.length && text[index + 1] == '*')
+            val isBoldEnd = (index > 0 && text[index - 1] == '*')
+            
+            if (!isBoldStart && !isBoldEnd) {
+                // Это одиночная *, проверяем на italic
+                val startIndex = index + 1
+                var searchIndex = startIndex
+                var foundEnd = false
+                var endIndex = -1
+                
+                // Ищем закрывающую *, пропуская **
+                while (searchIndex < text.length) {
+                    if (text[searchIndex] == '*') {
+                        // Проверяем, что это не часть **
+                        val isPartOfBoldStart = (searchIndex + 1 < text.length && text[searchIndex + 1] == '*')
+                        val isPartOfBoldEnd = (searchIndex > 0 && text[searchIndex - 1] == '*')
+                        
+                        if (!isPartOfBoldStart && !isPartOfBoldEnd) {
+                            // Нашли закрывающую одиночную *
+                            endIndex = searchIndex
+                            foundEnd = true
+                            break
+                        } else if (isPartOfBoldStart) {
+                            // Пропускаем **
+                            searchIndex += 2
+                            continue
+                        }
+                    }
+                    searchIndex++
+                }
+                
+                if (foundEnd && endIndex > startIndex) {
                     builder.pushStyle(SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
                     builder.append(text.substring(startIndex, endIndex))
                     builder.pop()
