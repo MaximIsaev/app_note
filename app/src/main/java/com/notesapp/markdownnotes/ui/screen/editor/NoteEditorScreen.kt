@@ -166,10 +166,11 @@ fun createMarkdownVisualTransformation(): VisualTransformation {
     }
 }
 
-// Функция для создания стиля текста
+// Функция для создания стиля текста (теперь @Composable, так как использует MaterialTheme)
+@Composable
 fun buildTextStyle(): TextStyle {
     return TextStyle(
-        color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onBackground,
         fontSize = 16.sp
     )
 }
