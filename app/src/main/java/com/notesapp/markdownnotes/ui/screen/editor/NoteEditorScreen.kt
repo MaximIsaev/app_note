@@ -14,16 +14,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FormatBold
-import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.util.regex.Pattern
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -192,7 +192,37 @@ fun NoteEditorScreen(
                     }
                 }
                 
-                // Поле контента без рамок и линий с поддержкой нумерованных списков
+                // Поле контента без рамок и линий с поддержкой нумерованных списков и форматирования заголовков
+                
+                // Вспомогательная функция для получения стиля строки
+                fun getLineStyle(line: String): TextStyle {
+                    return when {
+                        line.startsWith("### ") -> LocalTextStyle.current.copy(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        line.startsWith("## ") -> LocalTextStyle.current.copy(
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        line.startsWith("# ") -> LocalTextStyle.current.copy(
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        else -> LocalTextStyle.current.copy(
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+                
+                // Получаем текущую строку для определения стиля
+                val currentLines = textFieldValue.text.split("\n")
+                val cursorLineIndex = textFieldValue.text.substring(0, textFieldValue.selection.start).split("\n").size - 1
+                val currentLineStyle = if (currentLines.isNotEmpty() && cursorLineIndex < currentLines.size) {
+                    getLineStyle(currentLines[cursorLineIndex])
+                } else {
+                    LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onBackground)
+                }
                 
                 BasicTextField(
                     value = textFieldValue,
@@ -236,9 +266,7 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 400.dp),
-                    textStyle = LocalTextStyle.current.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
+                    textStyle = currentLineStyle,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     maxLines = Int.MAX_VALUE,
                     decorationBox = { innerTextField ->

@@ -21,7 +21,7 @@ __pycache__/
 *.swp
 *.swo
 
-# System
+# System files
 .DS_Store
 Thumbs.db
 .env
@@ -30,7 +30,6 @@ Thumbs.db
 
 # Logs and coverage
 *.log
-*.tmp
 coverage/
 htmlcov/
 .coverage
