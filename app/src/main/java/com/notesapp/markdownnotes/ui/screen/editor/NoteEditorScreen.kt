@@ -1,12 +1,14 @@
 package com.notesapp.markdownnotes.ui.screen.editor
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,19 +49,39 @@ fun NoteEditorScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
+            // Поле заголовка без рамок и линий
+            BasicTextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = { Text("Название") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                textStyle = LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onBackground
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (title.isEmpty()) {
+                            Text(
+                                text = "Название",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
             )
-            OutlinedTextField(
+            
+            // Поле контента без рамок и линий
+            BasicTextField(
                 value = content,
                 onValueChange = { content = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
+                textStyle = LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onBackground
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 maxLines = Int.MAX_VALUE
             )
         }

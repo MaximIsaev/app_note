@@ -1,69 +1,55 @@
+```
 # Compiled and build artifacts
-*.class
+*.pyc
+__pycache__/
 *.o
 *.obj
-*.out
+*.class
+*.exe
 *.dll
 *.so
 *.a
-*.pyc
-__pycache__/
+*.out
 
 # Dependencies
 node_modules/
 venv/
 .venv/
-.gradle/
-.mypy_cache/
-.pytest_cache/
-target/
-build/
-dist/
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Environment
 .env
 .env.local
-*.env.*
+.env.*
+
+# Build directories
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
+*.pyc
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Java/Kotlin specific
+*.class
+*.jar
+*.war
+*.ear
+out/
 
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # System files
 .DS_Store
 Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+*.log
+*.tmp
+```
