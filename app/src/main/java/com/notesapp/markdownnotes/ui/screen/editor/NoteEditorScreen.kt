@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -279,163 +281,281 @@ fun NoteEditorScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(paddingValues),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Панель инструментов с кнопками форматирования
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val prefix = "# "
-                            val currentText = textFieldValue.text
-                            val selectionStart = textFieldValue.selection.start
-                            val lines = currentText.substring(0, selectionStart).split("\n")
-                            val currentLineStart = if (lines.size > 1) {
-                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
-                            } else 0
-                            
-                            val newText = currentText.replaceRange(
-                                currentLineStart,
-                                currentLineStart,
-                                prefix
-                            )
-                            textFieldValue = TextFieldValue(
-                                newText,
-                                TextRange(selectionStart + prefix.length)
-                            )
-                            content = newText
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Text("H1")
-                    }
-                    
-                    Button(
-                        onClick = {
-                            val prefix = "## "
-                            val currentText = textFieldValue.text
-                            val selectionStart = textFieldValue.selection.start
-                            val lines = currentText.substring(0, selectionStart).split("\n")
-                            val currentLineStart = if (lines.size > 1) {
-                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
-                            } else 0
-                            
-                            val newText = currentText.replaceRange(
-                                currentLineStart,
-                                currentLineStart,
-                                prefix
-                            )
-                            textFieldValue = TextFieldValue(
-                                newText,
-                                TextRange(selectionStart + prefix.length)
-                            )
-                            content = newText
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Text("H2")
-                    }
-                    
-                    Button(
-                        onClick = {
-                            val prefix = "### "
-                            val currentText = textFieldValue.text
-                            val selectionStart = textFieldValue.selection.start
-                            val lines = currentText.substring(0, selectionStart).split("\n")
-                            val currentLineStart = if (lines.size > 1) {
-                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
-                            } else 0
-                            
-                            val newText = currentText.replaceRange(
-                                currentLineStart,
-                                currentLineStart,
-                                prefix
-                            )
-                            textFieldValue = TextFieldValue(
-                                newText,
-                                TextRange(selectionStart + prefix.length)
-                            )
-                            content = newText
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Text("H3")
-                    }
-                }
-                
-                // Поле контента без рамок и линий с поддержкой нумерованных списков
-                BasicTextField(
-                    value = textFieldValue,
-                    onValueChange = { newValue ->
-                        val lastText = textFieldValue.text
-                        val currentText = newValue.text
-                        
-                        // Проверяем, была ли нажата клавиша Enter (добавлен символ новой строки)
-                        if (currentText.length > lastText.length && 
-                            currentText[lastText.length] == '\n') {
-                            
-                            val lines = lastText.split("\n")
-                            if (lines.isNotEmpty()) {
-                                val lastLine = lines.last()
-                                
-                                // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
-                                val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
-                                val matcher = numberedListPattern.matcher(lastLine)
-                                
-                                if (matcher.matches()) {
-                                    val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
-                                    val listItemText = matcher.group(2) ?: ""
-                                    
-                                    // Если текст элемента списка не пустой, продолжаем нумерацию
-                                    if (listItemText.isNotEmpty()) {
-                                        val nextNumber = currentNumber + 1
-                                        val newText = "$lastText\n$nextNumber. "
-                                        val newSelection = TextRange(newText.length)
-                                        textFieldValue = TextFieldValue(newText, newSelection)
-                                        content = newText
-                                        return@BasicTextField
-                                    }
-                                    // Если текст пустой, просто добавляем новую строку без нумерации
-                                }
-                            }
-                        }
-                        
-                        textFieldValue = newValue
-                        content = newValue.text
-                    },
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 400.dp),
-                    textStyle = buildTextStyle(),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    maxLines = Int.MAX_VALUE,
-                    visualTransformation = createMarkdownVisualTransformation(),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (textFieldValue.text.isEmpty()) {
-                                Text(
-                                    text = "Текст",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Поле контента без рамок и линий с поддержкой нумерованных списков
+                    BasicTextField(
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            val lastText = textFieldValue.text
+                            val currentText = newValue.text
+                            
+                            // Проверяем, была ли нажата клавиша Enter (добавлен символ новой строки)
+                            if (currentText.length > lastText.length && 
+                                currentText[lastText.length] == '\n') {
+                                
+                                val lines = lastText.split("\n")
+                                if (lines.isNotEmpty()) {
+                                    val lastLine = lines.last()
+                                    
+                                    // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
+                                    val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
+                                    val matcher = numberedListPattern.matcher(lastLine)
+                                    
+                                    if (matcher.matches()) {
+                                        val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
+                                        val listItemText = matcher.group(2) ?: ""
+                                        
+                                        // Если текст элемента списка не пустой, продолжаем нумерацию
+                                        if (listItemText.isNotEmpty()) {
+                                            val nextNumber = currentNumber + 1
+                                            val newText = "$lastText\n$nextNumber. "
+                                            val newSelection = TextRange(newText.length)
+                                            textFieldValue = TextFieldValue(newText, newSelection)
+                                            content = newText
+                                            return@BasicTextField
+                                        }
+                                        // Если текст пустой, просто добавляем новую строку без нумерации
+                                    }
+                                }
                             }
-                            innerTextField()
+                            
+                            textFieldValue = newValue
+                            content = newValue.text
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 400.dp),
+                        textStyle = buildTextStyle(),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        maxLines = Int.MAX_VALUE,
+                        visualTransformation = createMarkdownVisualTransformation(),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (textFieldValue.text.isEmpty()) {
+                                    Text(
+                                        text = "Текст",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
+                
+                // Панель инструментов с кнопками форматирования внизу экрана
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Кнопка H1
+                        IconButton(
+                            onClick = {
+                                val prefix = "# "
+                                val currentText = textFieldValue.text
+                                val selectionStart = textFieldValue.selection.start
+                                val selectionEnd = textFieldValue.selection.end
+                                val lines = currentText.substring(0, selectionStart).split("\n")
+                                val currentLineStart = if (lines.size > 1) {
+                                    currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                                } else 0
+                                
+                                val newText = currentText.replaceRange(
+                                    currentLineStart,
+                                    currentLineStart,
+                                    prefix
+                                )
+                                val newCursorPos = if (selectionStart == selectionEnd) {
+                                    selectionStart + prefix.length
+                                } else {
+                                    selectionEnd + prefix.length
+                                }
+                                textFieldValue = TextFieldValue(
+                                    newText,
+                                    TextRange(newCursorPos)
+                                )
+                                content = newText
+                            },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Text("H1", style = MaterialTheme.typography.labelMedium)
+                        }
+                        
+                        // Кнопка H2
+                        IconButton(
+                            onClick = {
+                                val prefix = "## "
+                                val currentText = textFieldValue.text
+                                val selectionStart = textFieldValue.selection.start
+                                val selectionEnd = textFieldValue.selection.end
+                                val lines = currentText.substring(0, selectionStart).split("\n")
+                                val currentLineStart = if (lines.size > 1) {
+                                    currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                                } else 0
+                                
+                                val newText = currentText.replaceRange(
+                                    currentLineStart,
+                                    currentLineStart,
+                                    prefix
+                                )
+                                val newCursorPos = if (selectionStart == selectionEnd) {
+                                    selectionStart + prefix.length
+                                } else {
+                                    selectionEnd + prefix.length
+                                }
+                                textFieldValue = TextFieldValue(
+                                    newText,
+                                    TextRange(newCursorPos)
+                                )
+                                content = newText
+                            },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Text("H2", style = MaterialTheme.typography.labelMedium)
+                        }
+                        
+                        // Кнопка H3
+                        IconButton(
+                            onClick = {
+                                val prefix = "### "
+                                val currentText = textFieldValue.text
+                                val selectionStart = textFieldValue.selection.start
+                                val selectionEnd = textFieldValue.selection.end
+                                val lines = currentText.substring(0, selectionStart).split("\n")
+                                val currentLineStart = if (lines.size > 1) {
+                                    currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                                } else 0
+                                
+                                val newText = currentText.replaceRange(
+                                    currentLineStart,
+                                    currentLineStart,
+                                    prefix
+                                )
+                                val newCursorPos = if (selectionStart == selectionEnd) {
+                                    selectionStart + prefix.length
+                                } else {
+                                    selectionEnd + prefix.length
+                                }
+                                textFieldValue = TextFieldValue(
+                                    newText,
+                                    TextRange(newCursorPos)
+                                )
+                                content = newText
+                            },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Text("H3", style = MaterialTheme.typography.labelMedium)
+                        }
+                        
+                        // Кнопка Bold
+                        IconButton(
+                            onClick = {
+                                val currentText = textFieldValue.text
+                                val selectionStart = textFieldValue.selection.start
+                                val selectionEnd = textFieldValue.selection.end
+                                
+                                if (selectionStart != selectionEnd) {
+                                    val selectedText = currentText.substring(selectionStart, selectionEnd)
+                                    val newText = currentText.replaceRange(
+                                        selectionStart,
+                                        selectionEnd,
+                                        "**$selectedText**"
+                                    )
+                                    textFieldValue = TextFieldValue(
+                                        newText,
+                                        TextRange(selectionStart + 2, selectionEnd + 2)
+                                    )
+                                    content = newText
+                                } else {
+                                    val prefix = "****"
+                                    val newText = currentText.replaceRange(
+                                        selectionStart,
+                                        selectionStart,
+                                        prefix
+                                    )
+                                    textFieldValue = TextFieldValue(
+                                        newText,
+                                        TextRange(selectionStart + 2)
+                                    )
+                                    content = newText
+                                }
+                            },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Default.FormatBold, contentDescription = "Жирный")
+                        }
+                        
+                        // Кнопка Italic
+                        IconButton(
+                            onClick = {
+                                val currentText = textFieldValue.text
+                                val selectionStart = textFieldValue.selection.start
+                                val selectionEnd = textFieldValue.selection.end
+                                
+                                if (selectionStart != selectionEnd) {
+                                    val selectedText = currentText.substring(selectionStart, selectionEnd)
+                                    val newText = currentText.replaceRange(
+                                        selectionStart,
+                                        selectionEnd,
+                                        "*$selectedText*"
+                                    )
+                                    textFieldValue = TextFieldValue(
+                                        newText,
+                                        TextRange(selectionStart + 1, selectionEnd + 1)
+                                    )
+                                    content = newText
+                                } else {
+                                    val prefix = "**"
+                                    val newText = currentText.replaceRange(
+                                        selectionStart,
+                                        selectionStart,
+                                        prefix
+                                    )
+                                    textFieldValue = TextFieldValue(
+                                        newText,
+                                        TextRange(selectionStart + 1)
+                                    )
+                                    content = newText
+                                }
+                            },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Default.FormatItalic, contentDescription = "Курсив")
                         }
                     }
-                )
+                }
             }
         }
     }
