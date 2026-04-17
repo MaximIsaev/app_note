@@ -61,7 +61,7 @@ fun NoteEditorScreen(
         return VisualTransformation { text ->
             val transformedText = transformMarkdownText(text)
             TransformedText(
-                text = buildAnnotatedString(transformedText.first),
+                text = buildAnnotatedStringWithStyles(transformedText.first, transformedText.second),
                 offsetMapping = object : OffsetMapping {
                     override fun originalToTransformed(offset: Int): Int {
                         // Простая логика: считаем количество скрытых символов до позиции
@@ -135,12 +135,14 @@ fun NoteEditorScreen(
         }
     }
 
-    // Функция для преобразования текста: возвращает текст без символов #
-    fun transformMarkdownText(text: String): String {
+    // Функция для преобразования текста: возвращает текст без символов # и оригинальные строки
+    fun transformMarkdownText(text: String): Pair<String, List<String>> {
         val lines = text.split("\n")
         val resultLines = mutableListOf<String>()
+        val originalLines = mutableListOf<String>()
         
         for (line in lines) {
+            originalLines.add(line)
             when {
                 line.startsWith("### ") -> resultLines.add(line.substring(4))
                 line.startsWith("## ") -> resultLines.add(line.substring(3))
@@ -149,7 +151,7 @@ fun NoteEditorScreen(
             }
         }
         
-        return resultLines.joinToString("\n")
+        return Pair(resultLines.joinToString("\n"), originalLines)
     }
     
     // Функция для создания AnnotatedString со стилями заголовков
@@ -158,8 +160,45 @@ fun NoteEditorScreen(
         val lines = text.split("\n")
         
         for (i in lines.indices) {
-            val originalLine = getOriginalLine(text, i)
             val displayLine = lines[i]
+            
+            // Определяем тип строки по содержимому отображаемой строки (так как # уже удалены)
+            // Но нам нужно знать оригинальный префикс. 
+            // В данном контексте мы просто применяем стили на основе того, что это за строка.
+            // Для упрощения, предположим, что стили уже учтены в логике VisualTransformation
+            // или мы можем передать оригинальные строки сюда.
+            // Однако, так как эта функция вызывается внутри VisualTransformation, 
+            // у нас есть доступ к оригинальному тексту через замыкание, но здесь мы получаем уже обработанный.
+            // Исправление: передадим оригинальные строки через Pair из transformMarkdownText
+            
+            // В текущей реализации buildAnnotatedString вызывается с первым элементом Pair (текст без #)
+            // Нам нужно изменить сигнатуру или логику.
+            // Давайте изменим подход: будем определять стиль по индексу строки, зная, что порядок сохранен.
+            // Но у нас нет доступа к оригинальным строкам здесь.
+            
+            // Правильное решение: изменить buildAnnotatedString чтобы он принимал оригинальные строки
+            // Или сделать все в одном месте.
+            
+            // Временное решение для компиляции: просто добавляем текст без стилей, 
+            // стили будут применены ниже правильно, когда мы исправим вызов.
+            builder.append(displayLine)
+            
+            if (i < lines.size - 1) {
+                builder.append("\n")
+            }
+        }
+        
+        return builder.toAnnotatedString()
+    }
+    
+    // Новая версия buildAnnotatedString, принимающая оригинальные строки для правильного стилевания
+    fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<String>): AnnotatedString {
+        val builder = AnnotatedString.Builder()
+        val displayLines = displayText.split("\n")
+        
+        for (i in displayLines.indices) {
+            val originalLine = if (i < originalLines.size) originalLines[i] else ""
+            val displayLine = if (i < displayLines.size) displayLines[i] else ""
             
             when {
                 originalLine.startsWith("### ") -> {
@@ -184,18 +223,12 @@ fun NoteEditorScreen(
                 }
             }
             
-            if (i < lines.size - 1) {
+            if (i < displayLines.size - 1) {
                 builder.append("\n")
             }
         }
         
         return builder.toAnnotatedString()
-    }
-    
-    // Вспомогательная функция для получения оригинальной строки по индексу
-    fun getOriginalLine(fullText: String, lineNumber: Int): String {
-        val lines = fullText.split("\n")
-        return if (lineNumber < lines.size) lines[lineNumber] else ""
     }
     
     // Функция для создания стиля текста
