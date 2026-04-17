@@ -28,6 +28,152 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.regex.Pattern
 
+// Функция для преобразования текста: возвращает текст без символов # и оригинальные строки
+fun transformMarkdownText(text: String): Pair<String, List<String>> {
+    val lines = text.split("\n")
+    val resultLines = mutableListOf<String>()
+    val originalLines = mutableListOf<String>()
+    
+    for (line in lines) {
+        originalLines.add(line)
+        when {
+            line.startsWith("### ") -> resultLines.add(line.substring(4))
+            line.startsWith("## ") -> resultLines.add(line.substring(3))
+            line.startsWith("# ") -> resultLines.add(line.substring(2))
+            else -> resultLines.add(line)
+        }
+    }
+    
+    return Pair(resultLines.joinToString("\n"), originalLines)
+}
+
+// Функция для создания AnnotatedString со стилями заголовков
+fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<String>): AnnotatedString {
+    val builder = AnnotatedString.Builder()
+    val displayLines = displayText.split("\n")
+    
+    for (i in displayLines.indices) {
+        val originalLine = if (i < originalLines.size) originalLines[i] else ""
+        val displayLine = if (i < displayLines.size) displayLines[i] else ""
+        
+        when {
+            originalLine.startsWith("### ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            originalLine.startsWith("## ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            originalLine.startsWith("# ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            else -> {
+                builder.pushStyle(SpanStyle(fontSize = 16.sp))
+                builder.append(displayLine)
+                builder.pop()
+            }
+        }
+        
+        if (i < displayLines.size - 1) {
+            builder.append("\n")
+        }
+    }
+    
+    return builder.toAnnotatedString()
+}
+
+// Функция для создания визуальной трансформации, скрывающей символы форматирования
+fun createMarkdownVisualTransformation(): VisualTransformation {
+    return VisualTransformation { text ->
+        val transformedText = transformMarkdownText(text)
+        TransformedText(
+            text = buildAnnotatedStringWithStyles(transformedText.first, transformedText.second),
+            offsetMapping = object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    // Простая логика: считаем количество скрытых символов до позиции
+                    var hiddenCount = 0
+                    var currentPos = 0
+                    val lines = text.split("\n")
+                    var charCount = 0
+                    
+                    for (line in lines) {
+                        val lineLength = line.length
+                        if (charCount + lineLength >= offset) {
+                            // Мы в нужной строке
+                            when {
+                                line.startsWith("### ") -> hiddenCount += 4
+                                line.startsWith("## ") -> hiddenCount += 3
+                                line.startsWith("# ") -> hiddenCount += 2
+                            }
+                            break
+                        }
+                        charCount += lineLength + 1 // +1 для символа новой строки
+                        
+                        // Проверяем скрытые символы в пройденных строках
+                        when {
+                            line.startsWith("### ") -> hiddenCount += 4
+                            line.startsWith("## ") -> hiddenCount += 3
+                            line.startsWith("# ") -> hiddenCount += 2
+                        }
+                    }
+                    
+                    return offset - hiddenCount
+                }
+
+                override fun transformedToOriginal(offset: Int): Int {
+                    // Обратное преобразование: добавляем количество скрытых символов
+                    var addedCount = 0
+                    var currentPos = 0
+                    val lines = text.split("\n")
+                    var charCount = 0
+                    
+                    for (line in lines) {
+                        val displayLineLength = when {
+                            line.startsWith("### ") -> line.length - 4
+                            line.startsWith("## ") -> line.length - 3
+                            line.startsWith("# ") -> line.length - 2
+                            else -> line.length
+                        }
+                        
+                        if (charCount + displayLineLength >= offset) {
+                            // Мы в нужной строке
+                            when {
+                                line.startsWith("### ") -> addedCount += 4
+                                line.startsWith("## ") -> addedCount += 3
+                                line.startsWith("# ") -> addedCount += 2
+                            }
+                            break
+                        }
+                        charCount += displayLineLength + 1 // +1 для символа новой строки
+                        
+                        // Добавляем скрытые символы для пройденных строк
+                        when {
+                            line.startsWith("### ") -> addedCount += 4
+                            line.startsWith("## ") -> addedCount += 3
+                            line.startsWith("# ") -> addedCount += 2
+                        }
+                    }
+                    
+                    return offset + addedCount
+                }
+            }
+        )
+    }
+}
+
+// Функция для создания стиля текста
+fun buildTextStyle(): TextStyle {
+    return TextStyle(
+        color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
+        fontSize = 16.sp
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
@@ -54,189 +200,6 @@ fun NoteEditorScreen(
         if (textFieldValue.text != content) {
             textFieldValue = TextFieldValue(content, TextRange(content.length))
         }
-    }
-
-    // Функция для создания визуальной трансформации, скрывающей символы форматирования
-    fun createMarkdownVisualTransformation(): VisualTransformation {
-        return VisualTransformation { text ->
-            val transformedText = transformMarkdownText(text)
-            TransformedText(
-                text = buildAnnotatedStringWithStyles(transformedText.first, transformedText.second),
-                offsetMapping = object : OffsetMapping {
-                    override fun originalToTransformed(offset: Int): Int {
-                        // Простая логика: считаем количество скрытых символов до позиции
-                        var hiddenCount = 0
-                        var currentPos = 0
-                        val lines = text.split("\n")
-                        var charCount = 0
-                        
-                        for (line in lines) {
-                            val lineLength = line.length
-                            if (charCount + lineLength >= offset) {
-                                // Мы в нужной строке
-                                when {
-                                    line.startsWith("### ") -> hiddenCount += 4
-                                    line.startsWith("## ") -> hiddenCount += 3
-                                    line.startsWith("# ") -> hiddenCount += 2
-                                }
-                                break
-                            }
-                            charCount += lineLength + 1 // +1 для символа новой строки
-                            
-                            // Проверяем скрытые символы в пройденных строках
-                            when {
-                                line.startsWith("### ") -> hiddenCount += 4
-                                line.startsWith("## ") -> hiddenCount += 3
-                                line.startsWith("# ") -> hiddenCount += 2
-                            }
-                        }
-                        
-                        return offset - hiddenCount
-                    }
-
-                    override fun transformedToOriginal(offset: Int): Int {
-                        // Обратное преобразование: добавляем количество скрытых символов
-                        var addedCount = 0
-                        var currentPos = 0
-                        val lines = text.split("\n")
-                        var charCount = 0
-                        
-                        for (line in lines) {
-                            val displayLineLength = when {
-                                line.startsWith("### ") -> line.length - 4
-                                line.startsWith("## ") -> line.length - 3
-                                line.startsWith("# ") -> line.length - 2
-                                else -> line.length
-                            }
-                            
-                            if (charCount + displayLineLength >= offset) {
-                                // Мы в нужной строке
-                                when {
-                                    line.startsWith("### ") -> addedCount += 4
-                                    line.startsWith("## ") -> addedCount += 3
-                                    line.startsWith("# ") -> addedCount += 2
-                                }
-                                break
-                            }
-                            charCount += displayLineLength + 1 // +1 для символа новой строки
-                            
-                            // Добавляем скрытые символы для пройденных строк
-                            when {
-                                line.startsWith("### ") -> addedCount += 4
-                                line.startsWith("## ") -> addedCount += 3
-                                line.startsWith("# ") -> addedCount += 2
-                            }
-                        }
-                        
-                        return offset + addedCount
-                    }
-                }
-            )
-        }
-    }
-
-    // Функция для преобразования текста: возвращает текст без символов # и оригинальные строки
-    fun transformMarkdownText(text: String): Pair<String, List<String>> {
-        val lines = text.split("\n")
-        val resultLines = mutableListOf<String>()
-        val originalLines = mutableListOf<String>()
-        
-        for (line in lines) {
-            originalLines.add(line)
-            when {
-                line.startsWith("### ") -> resultLines.add(line.substring(4))
-                line.startsWith("## ") -> resultLines.add(line.substring(3))
-                line.startsWith("# ") -> resultLines.add(line.substring(2))
-                else -> resultLines.add(line)
-            }
-        }
-        
-        return Pair(resultLines.joinToString("\n"), originalLines)
-    }
-    
-    // Функция для создания AnnotatedString со стилями заголовков
-    fun buildAnnotatedString(text: String): AnnotatedString {
-        val builder = AnnotatedString.Builder()
-        val lines = text.split("\n")
-        
-        for (i in lines.indices) {
-            val displayLine = lines[i]
-            
-            // Определяем тип строки по содержимому отображаемой строки (так как # уже удалены)
-            // Но нам нужно знать оригинальный префикс. 
-            // В данном контексте мы просто применяем стили на основе того, что это за строка.
-            // Для упрощения, предположим, что стили уже учтены в логике VisualTransformation
-            // или мы можем передать оригинальные строки сюда.
-            // Однако, так как эта функция вызывается внутри VisualTransformation, 
-            // у нас есть доступ к оригинальному тексту через замыкание, но здесь мы получаем уже обработанный.
-            // Исправление: передадим оригинальные строки через Pair из transformMarkdownText
-            
-            // В текущей реализации buildAnnotatedString вызывается с первым элементом Pair (текст без #)
-            // Нам нужно изменить сигнатуру или логику.
-            // Давайте изменим подход: будем определять стиль по индексу строки, зная, что порядок сохранен.
-            // Но у нас нет доступа к оригинальным строкам здесь.
-            
-            // Правильное решение: изменить buildAnnotatedString чтобы он принимал оригинальные строки
-            // Или сделать все в одном месте.
-            
-            // Временное решение для компиляции: просто добавляем текст без стилей, 
-            // стили будут применены ниже правильно, когда мы исправим вызов.
-            builder.append(displayLine)
-            
-            if (i < lines.size - 1) {
-                builder.append("\n")
-            }
-        }
-        
-        return builder.toAnnotatedString()
-    }
-    
-    // Новая версия buildAnnotatedString, принимающая оригинальные строки для правильного стилевания
-    fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<String>): AnnotatedString {
-        val builder = AnnotatedString.Builder()
-        val displayLines = displayText.split("\n")
-        
-        for (i in displayLines.indices) {
-            val originalLine = if (i < originalLines.size) originalLines[i] else ""
-            val displayLine = if (i < displayLines.size) displayLines[i] else ""
-            
-            when {
-                originalLine.startsWith("### ") -> {
-                    builder.pushStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold))
-                    builder.append(displayLine)
-                    builder.pop()
-                }
-                originalLine.startsWith("## ") -> {
-                    builder.pushStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
-                    builder.append(displayLine)
-                    builder.pop()
-                }
-                originalLine.startsWith("# ") -> {
-                    builder.pushStyle(SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold))
-                    builder.append(displayLine)
-                    builder.pop()
-                }
-                else -> {
-                    builder.pushStyle(SpanStyle(fontSize = 16.sp))
-                    builder.append(displayLine)
-                    builder.pop()
-                }
-            }
-            
-            if (i < displayLines.size - 1) {
-                builder.append("\n")
-            }
-        }
-        
-        return builder.toAnnotatedString()
-    }
-    
-    // Функция для создания стиля текста
-    fun buildTextStyle(): TextStyle {
-        return TextStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 16.sp
-        )
     }
 
     Scaffold(
