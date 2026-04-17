@@ -46,6 +46,7 @@ fun NotesListScreen() {
         NoteEditorScreen(
             initialTitle = selectedNote!!.title,
             initialContent = selectedNote!!.content,
+            isEditMode = true,
             onNavigateBack = { newTitle, newContent ->
                 val updatedNote = selectedNote!!.copy(
                     title = newTitle.ifBlank { "Заметка" },
@@ -53,6 +54,12 @@ fun NotesListScreen() {
                     lastModified = System.currentTimeMillis()
                 )
                 repository.saveNote(updatedNote)
+                refreshNotes()
+                selectedNote = null
+                isEditing = false
+            },
+            onDelete = {
+                repository.deleteNote(selectedNote!!.id)
                 refreshNotes()
                 selectedNote = null
                 isEditing = false

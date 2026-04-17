@@ -1,55 +1,36 @@
-```
+```kotlin
 # Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
 *.class
-*.exe
-*.dll
+*.dex
 *.so
-*.a
-*.out
-
-# Dependencies
-node_modules/
-venv/
-.venv/
-.env
-.env.local
-.env.*
-
-# Build directories
-dist/
-build/
-target/
-.gradle/
-
-# Python specific
-*.pyc
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.coverage
-coverage/
-htmlcov/
-
-# Java/Kotlin specific
-*.class
+*.aar
+*.apk
 *.jar
 *.war
 *.ear
-out/
-
-# Editors
-.vscode/
+# Dependencies
+.gradle/
+build/
+app/build/
+# IDE files
 .idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
 *.swp
 *.swo
-
-# System files
-.DS_Store
-Thumbs.db
+# Logs and temp files
 *.log
 *.tmp
+# Environment
+.env
+.env.local
+.env.*
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+# Local configuration
+local.properties
 ```
