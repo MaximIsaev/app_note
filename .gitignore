@@ -7,14 +7,13 @@ build/
 target/
 
 # Dependencies
-.gradle/
 node_modules/
 venv/
 .venv/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
-dist/
+.gradle/
 
 # Editors
 .vscode/

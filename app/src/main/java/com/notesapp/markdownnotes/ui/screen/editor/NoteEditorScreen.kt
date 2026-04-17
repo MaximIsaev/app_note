@@ -90,7 +90,7 @@ fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<Stri
 // Функция для создания визуальной трансформации, скрывающей символы форматирования
 fun createMarkdownVisualTransformation(): VisualTransformation {
     return VisualTransformation { text ->
-        val transformedText = transformMarkdownText(text)
+        val transformedText = transformMarkdownText(text.text)
         TransformedText(
             text = buildAnnotatedStringWithStyles(transformedText.first, transformedText.second),
             offsetMapping = object : OffsetMapping {
@@ -98,7 +98,7 @@ fun createMarkdownVisualTransformation(): VisualTransformation {
                     // Простая логика: считаем количество скрытых символов до позиции
                     var hiddenCount = 0
                     var currentPos = 0
-                    val lines = text.split("\n")
+                    val lines = text.text.split("\n")
                     var charCount = 0
                     
                     for (line in lines) {
@@ -129,7 +129,7 @@ fun createMarkdownVisualTransformation(): VisualTransformation {
                     // Обратное преобразование: добавляем количество скрытых символов
                     var addedCount = 0
                     var currentPos = 0
-                    val lines = text.split("\n")
+                    val lines = text.text.split("\n")
                     var charCount = 0
                     
                     for (line in lines) {
