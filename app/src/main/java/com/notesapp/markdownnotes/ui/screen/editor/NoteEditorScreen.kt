@@ -39,9 +39,19 @@ fun NoteEditorScreen(
     var content by remember { mutableStateOf(initialContent) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
+    
+    // Объявляем textFieldValue здесь, чтобы он был доступен в кнопках
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
 
     LaunchedEffect(Unit) {
         isExpanded = true
+    }
+    
+    // Синхронизируем textFieldValue при изменении content извне
+    LaunchedEffect(content) {
+        if (textFieldValue.text != content) {
+            textFieldValue = TextFieldValue(content, TextRange(content.length))
+        }
     }
 
     Scaffold(
@@ -183,13 +193,6 @@ fun NoteEditorScreen(
                 }
                 
                 // Поле контента без рамок и линий с поддержкой нумерованных списков
-                var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
-                
-                LaunchedEffect(content) {
-                    if (textFieldValue.text != content) {
-                        textFieldValue = TextFieldValue(content, TextRange(content.length))
-                    }
-                }
                 
                 BasicTextField(
                     value = textFieldValue,
