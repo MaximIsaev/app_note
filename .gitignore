@@ -1,0 +1,36 @@
+```kotlin
+# Compiled and build artifacts
+*.class
+*.dex
+*.so
+*.aar
+*.apk
+*.jar
+*.war
+*.ear
+# Dependencies
+.gradle/
+build/
+app/build/
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+# Logs and temp files
+*.log
+*.tmp
+# Environment
+.env
+.env.local
+.env.*
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+# Local configuration
+local.properties
+```
