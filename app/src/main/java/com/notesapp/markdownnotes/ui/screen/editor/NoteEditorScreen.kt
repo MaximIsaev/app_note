@@ -18,7 +18,198 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import java.util.regex.Pattern
+
+// Функция для преобразования текста: возвращает текст без символов # и оригинальные строки
+fun transformMarkdownText(text: String): Pair<String, List<String>> {
+    val lines = text.split("\n")
+    val resultLines = mutableListOf<String>()
+    val originalLines = mutableListOf<String>()
+    
+    for (line in lines) {
+        originalLines.add(line)
+        when {
+            line.startsWith("### ") -> resultLines.add(line.substring(4))
+            line.startsWith("## ") -> resultLines.add(line.substring(3))
+            line.startsWith("# ") -> resultLines.add(line.substring(2))
+            else -> resultLines.add(line)
+        }
+    }
+    
+    return Pair(resultLines.joinToString("\n"), originalLines)
+}
+
+// Функция для создания AnnotatedString со стилями заголовков
+fun buildAnnotatedStringWithStyles(displayText: String, originalLines: List<String>): AnnotatedString {
+    val builder = AnnotatedString.Builder()
+    val displayLines = displayText.split("\n")
+    
+    for (i in displayLines.indices) {
+        val originalLine = if (i < originalLines.size) originalLines[i] else ""
+        val displayLine = if (i < displayLines.size) displayLines[i] else ""
+        
+        when {
+            originalLine.startsWith("### ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            originalLine.startsWith("## ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            originalLine.startsWith("# ") -> {
+                builder.pushStyle(SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold))
+                builder.append(displayLine)
+                builder.pop()
+            }
+            else -> {
+                builder.pushStyle(SpanStyle(fontSize = 16.sp))
+                builder.append(displayLine)
+                builder.pop()
+            }
+        }
+        
+        if (i < displayLines.size - 1) {
+            builder.append("\n")
+        }
+    }
+    
+    return builder.toAnnotatedString()
+}
+
+// Функция для создания визуальной трансформации, скрывающей символы форматирования
+fun createMarkdownVisualTransformation(): VisualTransformation {
+    return VisualTransformation { text ->
+        val transformedResult = transformMarkdownText(text.text)
+        val transformedString = transformedResult.first
+        val originalLines = transformedResult.second
+        
+        TransformedText(
+            text = buildAnnotatedStringWithStyles(transformedString, originalLines),
+            offsetMapping = object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    if (offset == 0) return 0
+                    
+                    val originalText = text.text
+                    var originalIndex = 0
+                    var transformedIndex = 0
+                    
+                    while (originalIndex < offset && originalIndex < originalText.length) {
+                        // Проверяем начало строки
+                        val isStartOfLine = (originalIndex == 0 || originalText[originalIndex - 1] == '\n')
+                        
+                        if (isStartOfLine) {
+                            val remaining = originalText.substring(originalIndex)
+                            when {
+                                remaining.startsWith("### ") -> {
+                                    if (originalIndex + 4 <= offset) {
+                                        originalIndex += 4
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        // Курсор внутри скрытой части
+                                        return transformedIndex
+                                    }
+                                }
+                                remaining.startsWith("## ") -> {
+                                    if (originalIndex + 3 <= offset) {
+                                        originalIndex += 3
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        return transformedIndex
+                                    }
+                                }
+                                remaining.startsWith("# ") -> {
+                                    if (originalIndex + 2 <= offset) {
+                                        originalIndex += 2
+                                        transformedIndex += 0
+                                        continue
+                                    } else {
+                                        return transformedIndex
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (originalText[originalIndex] == '\n') {
+                            transformedIndex++
+                            originalIndex++
+                        } else {
+                            transformedIndex++
+                            originalIndex++
+                        }
+                    }
+                    
+                    return transformedIndex
+                }
+
+                override fun transformedToOriginal(offset: Int): Int {
+                    if (offset == 0) return 0
+                    
+                    val originalText = text.text
+                    var originalIndex = 0
+                    var transformedIndex = 0
+                    
+                    while (transformedIndex < offset && originalIndex < originalText.length) {
+                        // Проверяем начало строки
+                        val isStartOfLine = (originalIndex == 0 || originalText[originalIndex - 1] == '\n')
+                        
+                        if (isStartOfLine) {
+                            val remaining = originalText.substring(originalIndex)
+                            when {
+                                remaining.startsWith("### ") -> {
+                                    originalIndex += 4
+                                    // transformedIndex не увеличивается
+                                    continue
+                                }
+                                remaining.startsWith("## ") -> {
+                                    originalIndex += 3
+                                    continue
+                                }
+                                remaining.startsWith("# ") -> {
+                                    originalIndex += 2
+                                    continue
+                                }
+                            }
+                        }
+                        
+                        if (originalIndex < originalText.length) {
+                            if (originalText[originalIndex] == '\n') {
+                                transformedIndex++
+                                originalIndex++
+                            } else {
+                                transformedIndex++
+                                originalIndex++
+                            }
+                        }
+                    }
+                    
+                    return originalIndex
+                }
+            }
+        )
+    }
+}
+
+// Функция для создания стиля текста (теперь @Composable, так как использует MaterialTheme)
+@Composable
+fun buildTextStyle(): TextStyle {
+    return TextStyle(
+        color = MaterialTheme.colorScheme.onBackground,
+        fontSize = 16.sp
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,15 +224,25 @@ fun NoteEditorScreen(
     var content by remember { mutableStateOf(initialContent) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
+    
+    // Объявляем textFieldValue здесь, чтобы он был доступен в кнопках
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
 
     LaunchedEffect(Unit) {
         isExpanded = true
+    }
+    
+    // Синхронизируем textFieldValue при изменении content извне
+    LaunchedEffect(content) {
+        if (textFieldValue.text != content) {
+            textFieldValue = TextFieldValue(content, TextRange(content.length))
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditMode) "Редактирование" else "Новая заметка") },
+                title = { Text("") },
                 navigationIcon = {
                     IconButton(onClick = { onNavigateBack(title, content) }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
@@ -83,43 +284,149 @@ fun NoteEditorScreen(
                     .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Поле заголовка без рамок и линий
-                BasicTextField(
-                    value = title,
-                    onValueChange = { title = it },
+                // Панель инструментов с кнопками форматирования
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = LocalTextStyle.current.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (title.isEmpty()) {
-                                Text(
-                                    text = "Название",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            innerTextField()
-                        }
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val prefix = "# "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H1")
                     }
-                )
+                    
+                    Button(
+                        onClick = {
+                            val prefix = "## "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H2")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val prefix = "### "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H3")
+                    }
+                }
                 
-                // Поле контента без рамок и линий
+                // Поле контента без рамок и линий с поддержкой нумерованных списков
                 BasicTextField(
-                    value = content,
-                    onValueChange = { content = it },
+                    value = textFieldValue,
+                    onValueChange = { newValue ->
+                        val lastText = textFieldValue.text
+                        val currentText = newValue.text
+                        
+                        // Проверяем, была ли нажата клавиша Enter (добавлен символ новой строки)
+                        if (currentText.length > lastText.length && 
+                            currentText[lastText.length] == '\n') {
+                            
+                            val lines = lastText.split("\n")
+                            if (lines.isNotEmpty()) {
+                                val lastLine = lines.last()
+                                
+                                // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
+                                val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
+                                val matcher = numberedListPattern.matcher(lastLine)
+                                
+                                if (matcher.matches()) {
+                                    val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
+                                    val listItemText = matcher.group(2) ?: ""
+                                    
+                                    // Если текст элемента списка не пустой, продолжаем нумерацию
+                                    if (listItemText.isNotEmpty()) {
+                                        val nextNumber = currentNumber + 1
+                                        val newText = "$lastText\n$nextNumber. "
+                                        val newSelection = TextRange(newText.length)
+                                        textFieldValue = TextFieldValue(newText, newSelection)
+                                        content = newText
+                                        return@BasicTextField
+                                    }
+                                    // Если текст пустой, просто добавляем новую строку без нумерации
+                                }
+                            }
+                        }
+                        
+                        textFieldValue = newValue
+                        content = newValue.text
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 400.dp),
-                    textStyle = LocalTextStyle.current.copy(
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
+                    textStyle = buildTextStyle(),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     maxLines = Int.MAX_VALUE,
+                    visualTransformation = createMarkdownVisualTransformation(),
                     decorationBox = { innerTextField ->
                         Box {
-                            if (content.isEmpty()) {
+                            if (textFieldValue.text.isEmpty()) {
                                 Text(
                                     text = "Текст",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -158,3 +465,4 @@ fun NoteEditorScreen(
         )
     }
 }
+
