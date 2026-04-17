@@ -18,7 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import java.util.regex.Pattern
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,10 +108,48 @@ fun NoteEditorScreen(
                     }
                 )
                 
-                // Поле контента без рамок и линий
+                // Поле контента без рамок и линий с поддержкой нумерованных списков
+                var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
+                
+                LaunchedEffect(content) {
+                    if (textFieldValue.text != content) {
+                        textFieldValue = TextFieldValue(content, TextRange(content.length))
+                    }
+                }
+                
                 BasicTextField(
-                    value = content,
-                    onValueChange = { content = it },
+                    value = textFieldValue,
+                    onValueChange = { newValue ->
+                        val lastText = textFieldValue.text
+                        val currentText = newValue.text
+                        
+                        // Проверяем, была ли нажата клавиша Enter (добавлен символ новой строки)
+                        if (currentText.length > lastText.length && 
+                            currentText[lastText.length] == '\n') {
+                            
+                            val lines = lastText.split("\n")
+                            if (lines.isNotEmpty()) {
+                                val lastLine = lines.last()
+                                
+                                // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
+                                val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
+                                val matcher = numberedListPattern.matcher(lastLine)
+                                
+                                if (matcher.matches()) {
+                                    val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
+                                    val nextNumber = currentNumber + 1
+                                    val newText = "$lastText\n$nextNumber. "
+                                    val newSelection = TextRange(newText.length)
+                                    textFieldValue = TextFieldValue(newText, newSelection)
+                                    content = newText
+                                    return@BasicTextField
+                                }
+                            }
+                        }
+                        
+                        textFieldValue = newValue
+                        content = newValue.text
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 400.dp),
@@ -119,7 +160,7 @@ fun NoteEditorScreen(
                     maxLines = Int.MAX_VALUE,
                     decorationBox = { innerTextField ->
                         Box {
-                            if (content.isEmpty()) {
+                            if (textFieldValue.text.isEmpty()) {
                                 Text(
                                     text = "Текст",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -157,4 +198,26 @@ fun NoteEditorScreen(
             }
         )
     }
+}
+
+// Функция для обработки автоматического продолжения нумерованного списка
+private fun handleNumberedListAutoContinue(currentText: String, selection: TextRange): TextFieldValue {
+    val lines = currentText.split("\n")
+    if (lines.isEmpty()) return TextFieldValue(currentText, selection)
+    
+    val lastLine = lines.last()
+    
+    // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
+    val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
+    val matcher = numberedListPattern.matcher(lastLine)
+    
+    if (matcher.matches()) {
+        val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
+        val nextNumber = currentNumber + 1
+        val newText = "$currentText\n$nextNumber. "
+        val newSelection = TextRange(newText.length)
+        return TextFieldValue(newText, newSelection)
+    }
+    
+    return TextFieldValue(currentText, selection)
 }
