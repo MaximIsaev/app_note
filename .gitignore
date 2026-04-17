@@ -2,11 +2,10 @@
 *.class
 *.o
 *.obj
-*.exe
+*.out
 *.dll
 *.so
 *.a
-*.out
 *.pyc
 __pycache__/
 
@@ -14,29 +13,31 @@ __pycache__/
 node_modules/
 venv/
 .venv/
+.gradle/
 .mypy_cache/
 .pytest_cache/
 target/
-.gradle/
-dist/
 build/
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# System
-.DS_Store
-Thumbs.db
-.env
-.env.local
-*.env.*
+dist/
 
 # Logs and temp files
 *.log
 *.tmp
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
 
 # Coverage
 coverage/

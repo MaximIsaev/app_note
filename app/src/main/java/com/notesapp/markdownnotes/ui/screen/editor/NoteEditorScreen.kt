@@ -44,20 +44,19 @@ fun NoteEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Заголовок") },
+                placeholder = { Text("Название") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                label = { Text("Содержимое (Markdown)") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
