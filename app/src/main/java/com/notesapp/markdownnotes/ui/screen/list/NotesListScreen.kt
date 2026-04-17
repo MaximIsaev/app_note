@@ -29,10 +29,10 @@ fun NotesListScreen() {
     val repository = remember { NoteRepository(context) }
     
     var notes by remember { mutableStateOf<List<Note>>(emptyList()) }
-    var showNewNoteDialog by remember { mutableStateOf(false) }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Note?>(null) }
+    var isNewNote by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         notes = repository.getAllNotes()
@@ -68,6 +68,24 @@ fun NotesListScreen() {
         return
     }
     
+    if (isNewNote) {
+        NoteEditorScreen(
+            initialTitle = "",
+            initialContent = "",
+            isEditMode = false,
+            onNavigateBack = { newTitle, newContent ->
+                // Если пользователь ничего не ввел, просто закрываем экран без создания заметки
+                if (newTitle.isNotBlank() || newContent.isNotBlank()) {
+                    val finalTitle = newTitle.ifBlank { "Заметка" }
+                    repository.createNote(finalTitle, newContent)
+                    refreshNotes()
+                }
+                isNewNote = false
+            }
+        )
+        return
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,7 +98,7 @@ fun NotesListScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showNewNoteDialog = true },
+                onClick = { isNewNote = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Новая заметка")
@@ -122,17 +140,6 @@ fun NotesListScreen() {
                 }
             }
         }
-    }
-    
-    if (showNewNoteDialog) {
-        NewNoteDialog(
-            onDismiss = { showNewNoteDialog = false },
-            onCreate = { title, content ->
-                repository.createNote(title, content)
-                refreshNotes()
-                showNewNoteDialog = false
-            }
-        )
     }
     
     showDeleteDialog?.let { noteToDelete ->
@@ -191,56 +198,6 @@ fun NoteItem(
             }
         }
     }
-}
-
-@Composable
-fun NewNoteDialog(
-    onDismiss: () -> Unit,
-    onCreate: (String, String) -> Unit
-) {
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Новая заметка") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Заголовок") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("Содержимое (Markdown)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    maxLines = 10
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val finalTitle = title.ifBlank { "Заметка" }
-                    onCreate(finalTitle, content)
-                }
-            ) {
-                Text("Создать")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Отмена")
-            }
-        }
-    )
 }
 
 @Composable
