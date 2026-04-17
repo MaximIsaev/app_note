@@ -192,78 +192,7 @@ fun NoteEditorScreen(
                     }
                 }
                 
-                // Поле контента без рамок и линий с поддержкой нумерованных списков и форматирования заголовков
-                // Функция для построения AnnotatedString с скрытыми символами # и примененным стилем
-                fun buildAnnotatedText(text: String): androidx.compose.ui.text.AnnotatedString {
-                    val builder = androidx.compose.ui.text.AnnotatedString.Builder()
-                    val lines = text.split("\n")
-                    
-                    lines.forEachIndexed { index, line ->
-                        var displayLine = line
-                        var style = LocalTextStyle.current.copy(
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        
-                        when {
-                            line.startsWith("### ") -> {
-                                style = LocalTextStyle.current.copy(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                displayLine = line.removePrefix("### ")
-                            }
-                            line.startsWith("## ") -> {
-                                style = LocalTextStyle.current.copy(
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                displayLine = line.removePrefix("## ")
-                            }
-                            line.startsWith("# ") -> {
-                                style = LocalTextStyle.current.copy(
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                displayLine = line.removePrefix("# ")
-                            }
-                        }
-                        
-                        builder.append(displayLine)
-                        if (index < lines.size - 1) {
-                            builder.append("\n")
-                        }
-                    }
-                    return builder.toAnnotatedString()
-                }
-                
-                val annotatedText = buildAnnotatedText(textFieldValue.text)
-                
-                // Определяем стиль для текущей строки (для курсора)
-                val currentLines = textFieldValue.text.split("\n")
-                val cursorLineIndex = textFieldValue.text.substring(0, textFieldValue.selection.start).split("\n").size - 1
-                val currentLineStyle = if (currentLines.isNotEmpty() && cursorLineIndex < currentLines.size) {
-                    val line = currentLines[cursorLineIndex]
-                    when {
-                        line.startsWith("### ") -> LocalTextStyle.current.copy(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        line.startsWith("## ") -> LocalTextStyle.current.copy(
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        line.startsWith("# ") -> LocalTextStyle.current.copy(
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        else -> LocalTextStyle.current.copy(
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                } else {
-                    LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onBackground)
-                }
-                
+                // Поле контента без рамок и линий с поддержкой нумерованных списков
                 BasicTextField(
                     value = textFieldValue,
                     onValueChange = { newValue ->
@@ -306,7 +235,10 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 400.dp),
-                    textStyle = currentLineStyle,
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 16.sp
+                    ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     maxLines = Int.MAX_VALUE,
                     decorationBox = { innerTextField ->
