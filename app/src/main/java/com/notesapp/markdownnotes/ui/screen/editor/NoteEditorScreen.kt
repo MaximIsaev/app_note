@@ -477,31 +477,32 @@ fun NoteEditorScreen(
                         IconButton(
                             onClick = {
                                 val currentText = textFieldValue.text
-                                val selectionStart = textFieldValue.selection.start
-                                val selectionEnd = textFieldValue.selection.end
+                                val selection = textFieldValue.selection
+                                val start = minOf(selection.start, selection.end)
+                                val end = maxOf(selection.start, selection.end)
                                 
-                                if (selectionStart != selectionEnd) {
-                                    val selectedText = currentText.substring(selectionStart, selectionEnd)
+                                if (start != end) {
+                                    val selectedText = currentText.substring(start, end)
                                     val newText = currentText.replaceRange(
-                                        selectionStart,
-                                        selectionEnd,
+                                        start,
+                                        end,
                                         "**$selectedText**"
                                     )
                                     textFieldValue = TextFieldValue(
                                         newText,
-                                        TextRange(selectionStart + 2, selectionEnd + 2)
+                                        TextRange(start + 2, end + 2)
                                     )
                                     content = newText
                                 } else {
                                     val prefix = "****"
                                     val newText = currentText.replaceRange(
-                                        selectionStart,
-                                        selectionStart,
+                                        start,
+                                        start,
                                         prefix
                                     )
                                     textFieldValue = TextFieldValue(
                                         newText,
-                                        TextRange(selectionStart + 2)
+                                        TextRange(start + 2)
                                     )
                                     content = newText
                                 }
@@ -518,31 +519,32 @@ fun NoteEditorScreen(
                         IconButton(
                             onClick = {
                                 val currentText = textFieldValue.text
-                                val selectionStart = textFieldValue.selection.start
-                                val selectionEnd = textFieldValue.selection.end
+                                val selection = textFieldValue.selection
+                                val start = minOf(selection.start, selection.end)
+                                val end = maxOf(selection.start, selection.end)
                                 
-                                if (selectionStart != selectionEnd) {
-                                    val selectedText = currentText.substring(selectionStart, selectionEnd)
+                                if (start != end) {
+                                    val selectedText = currentText.substring(start, end)
                                     val newText = currentText.replaceRange(
-                                        selectionStart,
-                                        selectionEnd,
+                                        start,
+                                        end,
                                         "*$selectedText*"
                                     )
                                     textFieldValue = TextFieldValue(
                                         newText,
-                                        TextRange(selectionStart + 1, selectionEnd + 1)
+                                        TextRange(start + 1, end + 1)
                                     )
                                     content = newText
                                 } else {
                                     val prefix = "**"
                                     val newText = currentText.replaceRange(
-                                        selectionStart,
-                                        selectionStart,
+                                        start,
+                                        start,
                                         prefix
                                     )
                                     textFieldValue = TextFieldValue(
                                         newText,
-                                        TextRange(selectionStart + 1)
+                                        TextRange(start + 1)
                                     )
                                     content = newText
                                 }
