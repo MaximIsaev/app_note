@@ -137,12 +137,18 @@ fun NoteEditorScreen(
                                 
                                 if (matcher.matches()) {
                                     val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
-                                    val nextNumber = currentNumber + 1
-                                    val newText = "$lastText\n$nextNumber. "
-                                    val newSelection = TextRange(newText.length)
-                                    textFieldValue = TextFieldValue(newText, newSelection)
-                                    content = newText
-                                    return@BasicTextField
+                                    val listItemText = matcher.group(2) ?: ""
+                                    
+                                    // Если текст элемента списка не пустой, продолжаем нумерацию
+                                    if (listItemText.isNotEmpty()) {
+                                        val nextNumber = currentNumber + 1
+                                        val newText = "$lastText\n$nextNumber. "
+                                        val newSelection = TextRange(newText.length)
+                                        textFieldValue = TextFieldValue(newText, newSelection)
+                                        content = newText
+                                        return@BasicTextField
+                                    }
+                                    // Если текст пустой, просто добавляем новую строку без нумерации
                                 }
                             }
                         }
