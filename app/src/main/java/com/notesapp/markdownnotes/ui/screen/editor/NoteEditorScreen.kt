@@ -14,6 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -86,6 +89,99 @@ fun NoteEditorScreen(
                     .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Панель инструментов с кнопками форматирования
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val prefix = "# "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H1")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val prefix = "## "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H2")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val prefix = "### "
+                            val currentText = textFieldValue.text
+                            val selectionStart = textFieldValue.selection.start
+                            val lines = currentText.substring(0, selectionStart).split("\n")
+                            val currentLineStart = if (lines.size > 1) {
+                                currentText.substring(0, selectionStart).lastIndexOf('\n') + 1
+                            } else 0
+                            
+                            val newText = currentText.replaceRange(
+                                currentLineStart,
+                                currentLineStart,
+                                prefix
+                            )
+                            textFieldValue = TextFieldValue(
+                                newText,
+                                TextRange(selectionStart + prefix.length)
+                            )
+                            content = newText
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text("H3")
+                    }
+                }
+                
                 // Поле контента без рамок и линий с поддержкой нумерованных списков
                 var textFieldValue by remember { mutableStateOf(TextFieldValue(initialContent)) }
                 
@@ -184,24 +280,3 @@ fun NoteEditorScreen(
     }
 }
 
-// Функция для обработки автоматического продолжения нумерованного списка
-private fun handleNumberedListAutoContinue(currentText: String, selection: TextRange): TextFieldValue {
-    val lines = currentText.split("\n")
-    if (lines.isEmpty()) return TextFieldValue(currentText, selection)
-    
-    val lastLine = lines.last()
-    
-    // Паттерн для поиска нумерованного списка: цифра(и), точка, пробел
-    val numberedListPattern = Pattern.compile("^(\\d+)\\.\\s(.*)$")
-    val matcher = numberedListPattern.matcher(lastLine)
-    
-    if (matcher.matches()) {
-        val currentNumber = matcher.group(1)?.toIntOrNull() ?: 0
-        val nextNumber = currentNumber + 1
-        val newText = "$currentText\n$nextNumber. "
-        val newSelection = TextRange(newText.length)
-        return TextFieldValue(newText, newSelection)
-    }
-    
-    return TextFieldValue(currentText, selection)
-}
